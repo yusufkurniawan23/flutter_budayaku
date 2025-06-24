@@ -17,8 +17,7 @@ final senimanListProvider = FutureProvider<List<Seniman>>((ref) async {
 final senimanDetailProvider =
     FutureProvider.family<Seniman, int>((ref, id) async {
   final senimanService = ref.watch(senimanServiceProvider);
-  return senimanService.getSenimanDetail(
-      id); // Menggunakan getSenimanDetail bukan getSenimanById
+  return senimanService.getSenimanDetail(id);
 });
 
 /// Provider untuk mendapatkan daftar seniman berdasarkan bidang seni
@@ -27,13 +26,15 @@ final senimanByBidangProvider =
   final senimanService = ref.watch(senimanServiceProvider);
   final allSeniman = await senimanService.getAllSeniman();
 
-  // Filter seniman berdasarkan bidang seni
+  // Filter seniman berdasarkan bidang seni 
   if (bidang.toLowerCase() == 'semua') {
     return allSeniman;
   }
 
   return allSeniman
-      .where((seniman) => seniman.nama.toLowerCase() == bidang.toLowerCase())
+      .where((seniman) => 
+          seniman.judul.toLowerCase().contains(bidang.toLowerCase()) ||
+          seniman.deskripsi.toLowerCase().contains(bidang.toLowerCase()))
       .toList();
 });
 
@@ -49,6 +50,9 @@ final searchSenimanProvider =
 
   final lowercaseQuery = query.toLowerCase();
   return allSeniman
-      .where((seniman) => seniman.nama.toLowerCase().contains(lowercaseQuery))
+      .where((seniman) => 
+          seniman.nama.toLowerCase().contains(lowercaseQuery) ||
+          seniman.judul.toLowerCase().contains(lowercaseQuery) ||
+          seniman.deskripsi.toLowerCase().contains(lowercaseQuery))
       .toList();
 });

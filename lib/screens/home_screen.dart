@@ -24,7 +24,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // List tampilan screen yang akan ditampilkan berdasarkan index
+    
     final List<Widget> screens = [
       const _HomeContent(),
       const SenimanListScreen(),
@@ -88,9 +88,8 @@ class _HomeContent extends ConsumerWidget {
     final budayaList = ref.watch(budayaListProvider);
     final user = ref.watch(authStateProvider).value;
 
-    // Jika home_screen_provider.dart belum lengkap, gunakan provider langsung
     final featuredSeniman = ref.watch(senimanListProvider);
-    // Menggunakan agendaListProvider langsung jika upcomingAgendaProvider belum tersedia
+
     final agendas = ref.watch(agendaListProvider);
 
     return SafeArea(
@@ -192,7 +191,6 @@ class _HomeContent extends ConsumerWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                // Gunakan BudayaListScreen tanpa parameter jika tidak mendukung
                                 builder: (_) => const BudayaListScreen(),
                               ),
                             );

@@ -1,7 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import 'api_service.dart';
-import 'dart:developer' as developer; // Import untuk logging yang lebih baik
+import 'dart:developer' as developer; 
 
 class AuthService {
   final ApiService _apiService = ApiService();

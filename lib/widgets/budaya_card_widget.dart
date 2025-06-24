@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../models/budaya.dart';
-import '../screens/budaya/budaya_detail_screen.dart'; // Path import yang benar
+import '../screens/budaya/budaya_detail_screen.dart';
 
 class BudayaCard extends StatelessWidget {
   final Budaya budaya;
@@ -22,7 +21,7 @@ class BudayaCard extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => BudayaDetailScreen(budayaId: budaya.id), // Perbaikan parameter
+              builder: (context) => BudayaDetailScreen(budayaId: budaya.id),
             ),
           );
         },
@@ -30,28 +29,34 @@ class BudayaCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
+            // Image - GUNAKAN getFullImageUrl() seperti Seniman
             ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
-              child: CachedNetworkImage(
-                imageUrl: budaya.foto,
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  height: 200,
-                  width: double.infinity,
-                  color: Colors.grey[300],
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  height: 200,
-                  width: double.infinity,
-                  color: Colors.grey[300],
-                  child: const Icon(Icons.error),
-                ),
-              ),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: budaya.hasPhoto
+                  ? Image.network(
+                      budaya.getFullImageUrl()!, // Gunakan method yang sama dengan Seniman
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      headers: const {
+                        'Accept': 'image/*',
+                        'User-Agent': 'BudayakuApp/1.0',
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: 200,
+                          width: double.infinity,
+                          color: Colors.grey[300],
+                          child: const Center(child: CircularProgressIndicator()),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        print('❌ BudayaCard image error: ${budaya.getFullImageUrl()} - $error');
+                        return _buildPlaceholder();
+                      },
+                    )
+                  : _buildPlaceholder(),
             ),
 
             // Content
@@ -95,7 +100,7 @@ class BudayaCard extends StatelessWidget {
 
                   // Description
                   Text(
-                    budaya.deskripsi,
+                    budaya.deskripsiClean,
                     style: Theme.of(context).textTheme.bodyMedium,
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
@@ -108,7 +113,7 @@ class BudayaCard extends StatelessWidget {
                       const Icon(Icons.calendar_today, size: 16),
                       const SizedBox(width: 4),
                       Text(
-                        budaya.tanggal,
+                        budaya.getFormattedDate(),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -118,6 +123,45 @@ class BudayaCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    return Container(
+      height: 200,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.grey[300]!, Colors.grey[500]!],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            budaya.getCategoryIcon(),
+            style: const TextStyle(fontSize: 40),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.9),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'Foto Tidak Tersedia',
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w600,
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

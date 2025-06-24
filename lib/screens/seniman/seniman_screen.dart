@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/seniman.dart'; // Perbaikan path import
-import '../../providers/seniman_provider.dart'; // Perbaikan path import
+import '../../models/seniman.dart';
+import '../../providers/seniman_provider.dart';
+import '../../widgets/seniman_image_widget.dart';
 import 'seniman_detail_screen.dart';
 
 class SenimanListScreen extends ConsumerStatefulWidget {
@@ -25,9 +26,18 @@ class _SenimanListScreenState extends ConsumerState<SenimanListScreen> {
     final senimanList = ref.watch(senimanListProvider);
 
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Seniman'),
+        title: const Text(
+          'Seniman',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: Colors.brown[700],
         elevation: 0,
+        centerTitle: true,
       ),
       body: Column(
         children: [
@@ -36,41 +46,157 @@ class _SenimanListScreenState extends ConsumerState<SenimanListScreen> {
             child: senimanList.when(
               data: (senimans) {
                 if (senimans.isEmpty) {
-                  return const Center(
-                    child: Text('Tidak ada data seniman'),
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person_off_outlined,
+                          size: 80,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Tidak ada data seniman',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Silakan coba lagi nanti',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }
 
-                // Filter seniman berdasarkan pencarian
                 final filteredSenimans = _filterSenimans(senimans);
 
-                if (filteredSenimans.isEmpty) {
-                  return const Center(
-                    child:
-                        Text('Tidak ada seniman yang sesuai dengan pencarian'),
+                if (filteredSenimans.isEmpty && _searchController.text.isNotEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.search_off,
+                          size: 80,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Tidak ada seniman yang sesuai',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        Text(
+                          'dengan pencarian "${_searchController.text}"',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
                   );
                 }
 
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 0.75,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: filteredSenimans.length,
-                  itemBuilder: (context, index) {
-                    final seniman = filteredSenimans[index];
-                    return _buildSenimanCard(seniman);
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(senimanListProvider);
                   },
+                  color: Colors.brown[700],
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.75, 
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: filteredSenimans.length,
+                    itemBuilder: (context, index) {
+                      final seniman = filteredSenimans[index];
+                      return _buildSenimanCard(seniman);
+                    },
+                  ),
                 );
               },
-              loading: () => const Center(
-                child: CircularProgressIndicator(),
+              loading: () => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.brown[700]!),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Memuat data seniman...',
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               error: (error, stack) => Center(
-                child: Text('Error: $error'),
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.error_outline,
+                        size: 80,
+                        color: Colors.red[400],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Terjadi Kesalahan',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        error.toString().replaceAll('Exception: ', ''),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          ref.invalidate(senimanListProvider);
+                        },
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Coba Lagi'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.brown[700],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -82,16 +208,41 @@ class _SenimanListScreenState extends ConsumerState<SenimanListScreen> {
   Widget _buildSearchBar() {
     return Container(
       padding: const EdgeInsets.all(16),
-      color: Theme.of(context).colorScheme.surface,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
       child: TextField(
         controller: _searchController,
         decoration: InputDecoration(
           hintText: 'Cari seniman...',
-          prefixIcon: const Icon(Icons.search),
+          hintStyle: TextStyle(color: Colors.grey[500]),
+          prefixIcon: Icon(Icons.search, color: Colors.brown[700]),
+          filled: true,
+          fillColor: Colors.grey[50],
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Colors.grey[300]!),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(15),
+            borderSide: BorderSide(color: Colors.brown[700]!, width: 2),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 20,
+          ),
         ),
         onChanged: (_) {
           setState(() {});
@@ -104,15 +255,15 @@ class _SenimanListScreenState extends ConsumerState<SenimanListScreen> {
     return Card(
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
       ),
-      elevation: 2,
+      elevation: 4,
+      shadowColor: Colors.grey.withOpacity(0.3),
       child: InkWell(
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              // Perbaikan: Mengirim ID seniman bukan objek seniman
               builder: (_) => SenimanDetailScreen(senimanId: seniman.id),
             ),
           );
@@ -120,44 +271,84 @@ class _SenimanListScreenState extends ConsumerState<SenimanListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Photo
-            AspectRatio(
-              aspectRatio: 1.0,
-              child: Image.network(
-                seniman.foto,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  color: Colors.grey.shade300,
-                  child: const Icon(Icons.person, size: 50),
+            // Photo Section
+            Expanded(
+              flex: 3,
+              child: SenimanImageWidget(
+                seniman: seniman,
+                width: double.infinity,
+                height: double.infinity,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
+                showLoadingProgress: true,
               ),
             ),
-
-            // Details
-            Padding(
+            
+            // Details Section
+            Container(
+              width: double.infinity,
               padding: const EdgeInsets.all(12),
+              height: 85,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    seniman.nama,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  // Nama dan Judul
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          seniman.nama,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          seniman.judul,
+                          style: TextStyle(
+                            color: Colors.brown[600],
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 4),
-                  // Perbaikan: Menggunakan bidang seni alih-alih judul
-                  Text(
-                    seniman.judul,
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 12,
+                  
+                  // Location
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 12,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            seniman.alamat,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 10,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -169,7 +360,7 @@ class _SenimanListScreenState extends ConsumerState<SenimanListScreen> {
   }
 
   List<Seniman> _filterSenimans(List<Seniman> senimans) {
-    final searchQuery = _searchController.text.toLowerCase();
+    final searchQuery = _searchController.text.toLowerCase().trim();
 
     if (searchQuery.isEmpty) {
       return senimans;
@@ -177,8 +368,9 @@ class _SenimanListScreenState extends ConsumerState<SenimanListScreen> {
 
     return senimans.where((seniman) {
       return seniman.nama.toLowerCase().contains(searchQuery) ||
-          (seniman.nama.toLowerCase()).contains(searchQuery) ||
-          (seniman.judul.toLowerCase()).contains(searchQuery);
+          seniman.judul.toLowerCase().contains(searchQuery) ||
+          seniman.deskripsi.toLowerCase().contains(searchQuery) ||
+          seniman.alamat.toLowerCase().contains(searchQuery);
     }).toList();
   }
 }
